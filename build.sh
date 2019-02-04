@@ -19,7 +19,7 @@ declare -a buckets=(
 
 for bucket in "${buckets[@]}"
 do
-  # Deploy functions
   # TODO: deploy from a source repo?
-  echo gcloud functions deploy ${name} --region=europe-west1 --runtime=python37 --source=gs://mame-functions-upload/functions.zip --memory=128MB --trigger-bucket --trigger-resource=${name} --trigger-event=google.storage.object.finalize --entry-point=unzip
+  function=process-${bucket}
+  echo gcloud functions deploy ${function} --region=europe-west1 --runtime=python37 --source=gs://mame-functions-upload/functions.zip --memory=128MB --trigger-bucket --trigger-resource=${bucket} --trigger-event=google.storage.object.finalize --entry-point=unzip
 done
