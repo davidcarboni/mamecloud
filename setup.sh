@@ -15,4 +15,4 @@ do
    gsutil mb -p $PROJECT -c $STORAGE_CLASS -l $LOCATION gs://${bucket}/
 done
 
-gsutil ls
+gsutil ls -p $PROJECT
