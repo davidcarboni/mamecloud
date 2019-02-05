@@ -25,38 +25,42 @@ def process(bucket, zip_file):
     """ Extracts a zip file
     Extracted files are placed into the same folder as the zip file itself.
     Any path information is discarded (zips often contain a folder, e.g. 'snap' or 'title')
+
+    We're trying to make sure temp files are deleted as soon as possible to avoid
+    the function storage filling up. According to the docs, this is in-memory storage
+    so is limited.
     """
     print("It's a zip. Unpacking...")
-    zip_file_url = f"gs://{bucket}/{zip_file}"
-    zip_folder = os.path.dirname(zip_file)
-    print(f"Extracting {zip_file_url} to: {zip_folder}")
-    downloaded = get_blob(bucket, zip_file)
+    path = os.path.dirname(zip_file)
+    print(f"Extracting {zip_file} in {bucket} into: {path}")
     try:
-        with ZipFile(downloaded) as archive:
-            for archive_item in archive.namelist():
-                ext = os.path.splitext(archive_item)[1]
-                if ext == ".png":
-                    archive_file_name = os.path.basename(archive_item)
-                    image_file_url = f"{zip_folder}/{archive_file_name}"
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        extracted_path = archive.extract(archive_item, path=temp_dir)
-                        print(f"Extracted {archive_item} to {extracted_path} -> {image_file_url}")
-                        put_blob(bucket, image_file_url, extracted_path)
-                        print(f'Uploaded {image_file_url} to bucket {bucket}')
-                else:
-                        print(f"Skipping {archive_item}")
+        with tempfile.TemporaryDirectory() as extract_dir:
+            with tempfile.TemporaryFile() as downloaded:
+                get_blob(bucket, zip_file, downloaded)
+                with ZipFile(downloaded) as archive:
+                    for archive_item in archive.namelist():
+                        ext = os.path.splitext(archive_item)[1]
+                        if ext == ".png":
+                            archive_file_name = os.path.basename(archive_item)
+                            image_file_path = f"{path}/{archive_file_name}"
+                            extracted_path = archive.extract(archive_item, path=extract_dir)
+                            print(f"Extracted {archive_item} to {extracted_path}")
+                            put_blob("mamecloud", image_file_path, extracted_path)
+                            print(f'Uploaded {image_file_path} to bucket mamecloud')
+                        else:
+                            print("anything")
+                            print(f"Skipping {archive_item}")
     finally:
+        # Clean up the upload bucket:
         delete_blob(bucket, zip_file)
 
-def get_blob(bucket_name, blob_name):
+def get_blob(bucket_name, blob_name, file):
     """Downloads a file from a bucket."""
     storage_client = storage.Client()
     bucket = storage_client.get_bucket(bucket_name)
     blob = bucket.blob(blob_name)
-    file = tempfile.TemporaryFile()
     blob.download_to_file(file)
-    print(f"File {blob_name} downloaded from{bucket_name} to {file.name}.")
-    return file
+    print(f"File {blob_name} downloaded from {bucket_name} to {file.name}.")
 
 def put_blob(bucket_name, blob_name, file_name):
     """Uploads a file to a bucket."""
