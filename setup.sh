@@ -6,12 +6,8 @@ LOCATION=eu
 
 # The buckets we want
 declare -a buckets=(
-  "mame-functions-upload"
-  "mame-store"
-  "zips-cabinet"
-  "zips-flyer"
-  "zips-controlpanel"
-  "zips-snap"
+  "mamecloud-functions"
+  "mamecloud"
 )
 
 for bucket in "${buckets[@]}"
