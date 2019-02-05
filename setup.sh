@@ -7,6 +7,7 @@ LOCATION=eu
 # The buckets we want
 declare -a buckets=(
   "mamecloud-functions"
+  "mamecloud-upload"
   "mamecloud"
 )
 
