@@ -1,7 +1,12 @@
 import json
 import os.path
+import os.remove
 import tempfile
 from zipfile import ZipFile
+from google.cloud import storage
+
+
+storage_client = storage.Client()
 
 def unzip(event, context):
     """Triggered by a change to a Cloud Storage bucket.
@@ -40,5 +45,22 @@ def process(bucket, zipfile):
                     print(f"Extracted {zip_item} to {extracted} -> {gcs_image_file}")
             else:
                 print(f"Skipping {zip_item}")
+
+def get_blob(bucket_name, blob_name):
+    """Downloads a file from a bucket."""
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    file = tempfile.TemporaryFile()
+    blob.download_to_file(file)
+    print(f"File {blob_name} downloaded from{bucket_name} to {file.name}.")
+    return file
+
+def put_blob(bucket_name, blob_name, file):
+    """Uploads a file to a bucket."""
+    bucket = storage_client.get_bucket(bucket_name)
+    blob = bucket.blob(blob_name)
+    blob.upload_from_file(file)
+    print(f"File {file.name} uploaded to {bucket_name} as {blob_name}.")
+    os.remove(file)
 
 unzip({'name': 'pS_flyers_upd_205.zip', 'bucket': 'myBucket', 'contentType': 'application/zip'}, "")
