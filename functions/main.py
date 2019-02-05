@@ -46,9 +46,9 @@ def process(bucket, zip_file):
                             extracted_path = archive.extract(archive_item, path=extract_dir)
                             print(f"Extracted {archive_item} to {extracted_path}")
                             put_blob("mamecloud", image_file_path, extracted_path)
+                            os.remove(extracted_path)
                             print(f'Uploaded {image_file_path} to bucket mamecloud')
                         else:
-                            print("anything")
                             print(f"Skipping {archive_item}")
     finally:
         # Clean up the upload bucket:
@@ -67,9 +67,9 @@ def put_blob(bucket_name, blob_name, file_name):
     storage_client = storage.Client()
     bucket = storage_client.get_bucket(bucket_name)
     blob = bucket.blob(blob_name)
+    blob.make_public()
     blob.upload_from_filename(file_name)
     print(f"File {file_name} uploaded to {bucket_name} as {blob_name}.")
-    os.remove(file_name)
 
 def delete_blob(bucket_name, blob_name):
     """Uploads a file to a bucket."""
